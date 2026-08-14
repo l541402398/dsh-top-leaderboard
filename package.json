@@ -1,6 +1,6 @@
 {
   "name": "dsh-top-leaderboard",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DSH Web 插件热度榜单：侧栏「榜单」按钮 + 弹窗排行 + 一键安装（复用官方 Profile/Bundle 契约）",
   "keywords": [
     "dsh-plugin",
