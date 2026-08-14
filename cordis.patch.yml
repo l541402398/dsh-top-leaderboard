@@ -1,0 +1,5 @@
+# dsh-top-leaderboard 是普通 DSH Bundle：只新增一个宿主侧 Cordis 服务
+# （注册 /dsh-top/v1 管理路由），浏览器 UI 走标准的 dsh.client 入口。
+- insert:
+    - id: dsh-top-leaderboard
+      name: dsh-top-leaderboard
