@@ -8,6 +8,15 @@ window.__ModuleLoader__.load({
 
     const API = '/dsh-top/v1'
 
+    // ---- 仓库大小展示（KB → 文本）----
+    function formatSize(size) {
+      if (size === null || size === undefined || size < 0) return null
+      if (size < 1024) return '<1 MB'
+      const mb = size / 1024
+      if (mb < 1024) return `${mb >= 100 ? Math.round(mb) : Math.round(mb * 10) / 10} MB`
+      return `${Math.round((mb / 1024) * 10) / 10} GB`
+    }
+
     // ---- 共享开关状态（按钮与弹窗两个 slot 之间共享）----
     let open = false
     const openListeners = new Set()
@@ -199,6 +208,8 @@ window.__ModuleLoader__.load({
       nameLink: { color: 'inherit', textDecoration: 'none', fontSize: 13.5, fontWeight: 650, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
       badge: { padding: '2px 7px', borderRadius: 999, fontSize: 11, background: 'var(--dsw-color-bg-subtle, rgba(127,127,127,.12))', color: 'var(--dsw-color-text-secondary, #475467)' },
       typeBadge: { padding: '1px 6px', borderRadius: 999, fontSize: 10.5, fontWeight: 650, border: '1px solid', lineHeight: 1.4, flexShrink: 0 },
+      sizeBadge: { padding: '2px 7px', borderRadius: 999, fontSize: 11, background: 'rgba(127,127,127,.1)', color: 'var(--dsw-color-text-secondary, #475467)', flexShrink: 0 },
+      sizeBig: { color: 'var(--dsw-color-warning, #b54708)', background: 'rgba(247,144,9,.12)', border: '1px solid rgba(247,144,9,.35)' },
       lockButton: { padding: 0, border: 0, background: 'transparent', cursor: 'pointer', fontSize: 12, opacity: .9, lineHeight: 1, flexShrink: 0 },
       okBadge: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, padding: 0, borderRadius: '50%', border: '1px solid var(--dsw-color-success, #067647)', background: 'rgba(6,118,71,.16)', cursor: 'pointer', lineHeight: 1, flexShrink: 0 },
       greenEmoji: { fontSize: 11, filter: 'sepia(1) saturate(4) hue-rotate(70deg)' },
@@ -336,6 +347,8 @@ window.__ModuleLoader__.load({
       const state = useSyncExternalStore(subscribeInstall, () => getInstallState(key))
       const [, setTick] = useState(0)
       const installing = state.status === 'installing'
+      const sizeText = formatSize(repo.size)
+      const sizeBig = repo.size !== null && repo.size !== undefined && repo.size >= 102400
       useEffect(() => {
         if (!installing) return
         const timer = setInterval(() => setTick((value) => value + 1), 1000)
@@ -354,6 +367,12 @@ window.__ModuleLoader__.load({
               h('span', { style: styles.star }, `⭐ ${repo.stars}`),
               repo.language ? h('span', { style: styles.badge }, repo.language) : null,
               h(TypeBadge, { kind: repo.kind }),
+              sizeText ? h('span', {
+                style: { ...styles.sizeBadge, ...(sizeBig ? styles.sizeBig : {}) },
+                title: sizeBig
+                  ? '仓库较大（GitHub 统计含历史；浅克隆只下载当前分支文件，安装前会再次提示）'
+                  : '仓库大小（GitHub 统计，含历史；浅克隆只下载当前分支文件）',
+              }, `📦 ${sizeText}`) : null,
             ),
             repo.description ? h('p', { style: styles.description, title: repo.description }, repo.description) : null,
             showLogToggle
@@ -449,8 +468,8 @@ window.__ModuleLoader__.load({
             style: styles.search,
           }),
           h('p', { style: styles.note }, tab === 'topic'
-            ? '以下为 GitHub 上带 dsh-plugin topic 的公开插件（按 Star 排序），可直接安装。'
-            : '安装以 SSH git 源加入 web profile（等价于 dsh plugin --profile web add，使用你的 id_rsa_github）。私有仓库名前有 🔒，点击它可检测你的访问权限；无权限时安装会快速失败并在日志里给出原因。'),
+            ? '以下为 GitHub 上带 dsh-plugin topic 的公开插件（按 Star 排序，📦 为仓库总大小），可直接安装。'
+            : '安装优先走 HTTPS（公共仓库无需密钥），失败自动退回 SSH（需配置 id_rsa_github）。📦 为仓库总大小（GitHub 统计含历史，浅克隆只下载当前分支文件），安装前日志也会提示。私有仓库名前有 🔒，点击可检测你的访问权限；无权限时安装会快速失败并在日志里给出原因。'),
           error && h('p', { role: 'alert', style: styles.error }, error),
           h('div', { style: styles.list },
             !data && !error
